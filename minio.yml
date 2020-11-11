@@ -1,0 +1,100 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  creationTimestamp: null
+  generation: 49
+  labels:
+    app: docker-image
+    app_name: minio
+    template: docker-image
+  name: minio
+spec:
+  replicas: 0
+  revisionHistoryLimit: 10
+  selector:
+    app_name: minio
+    deploymentconfig: minio
+  strategy:
+    activeDeadlineSeconds: 21600
+    resources: {}
+    rollingParams:
+      intervalSeconds: 1
+      maxSurge: 9
+      maxUnavailable: 0
+      timeoutSeconds: 100
+      updatePeriodSeconds: 1
+    type: Rolling
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app_name: minio
+        deploymentconfig: minio
+        template: docker-image
+    spec:
+      containers:
+      - env:
+        - name: APP_NAME
+          value: minio
+        - name: PROJECT_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: TZ
+          value: America/Sao_Paulo
+        - name: REGION
+          value: br
+        - name: MINIO_ACCESS_KEY
+          value: "IMRX54CK9Z25KGJ7VHPE"
+        - name: MINIO_SECRET_KEY
+          value: "nChoV88yVIXMQ1HhZ3DH5KeF12RL3sM98xLNf9j3"
+        image: registry.cmpn.paas.gsnetcloud.corp/santander/minio:latest
+        args:
+        - server
+        - /storage 
+        imagePullPolicy: Always
+        name: minio
+        ports:
+        - containerPort: 9000
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1G
+          requests:
+            cpu: 1m
+            memory: 256M
+        securityContext:
+          privileged: false
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/certificates
+          name: certificates-volume
+        - mountPath: /storage
+          name: minio-data
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        supplementalGroups:
+        - 65534
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: certificates-volume
+        secret:
+          defaultMode: 420
+          secretName: certificates-secret
+      - name: minio-data 
+        persistentVolumeClaim:
+          claimName: minio-data
+  test: false
+  triggers: []
+status:
+  availableReplicas: 0
+  latestVersion: 0
+  observedGeneration: 0
+  replicas: 0
+  unavailableReplicas: 0
+  updatedReplicas: 0
